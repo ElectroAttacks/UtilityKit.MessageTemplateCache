@@ -9,6 +9,8 @@ namespace MessageTemplateCache.Analyzers;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed partial class CreateRequestAnalyzer : DiagnosticAnalyzer
 {
+
+    /// <inheritdoc/>
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics
     {
         get
@@ -17,24 +19,30 @@ public sealed partial class CreateRequestAnalyzer : DiagnosticAnalyzer
         }
     }
 
+
+    /// <inheritdoc/>
     public override void Initialize(AnalysisContext context)
     {
         context.EnableConcurrentExecution();
-        context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.Analyze |
-            GeneratedCodeAnalysisFlags.ReportDiagnostics);
+        context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.Analyze | GeneratedCodeAnalysisFlags.ReportDiagnostics);
 
         context.RegisterSyntaxNodeAction(AnalyzeMethodInvocation, SyntaxKind.InvocationExpression);
     }
 
+    /// <inheritdoc/>
     private void AnalyzeMethodInvocation(SyntaxNodeAnalysisContext context)
     {
-        // Clean the string from the quotes and double backslashes.
-        static string CleanString(string input) => input.Replace("\\\\", "\\").Trim('"');
+        // Helper method to get the string value of an expression.
+        static string GetCleanedString(ExpressionSyntax expressionSyntax) => expressionSyntax.ToString()
+            .Replace("\\\\", "\\")
+            .Trim('"');
+
 
         // Main logic.
         if (context.Node is InvocationExpressionSyntax invocation)
         {
-            if (invocation.Expression is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "CreateRequest" } method && method.Expression.ToString() == "MessageTemplateCache")
+            if (invocation.Expression is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "CreateRequest" } method &&
+                method.Expression.ToString() == "MessageTemplateCache")
             {
                 if (invocation.ArgumentList.Arguments.Count == 0) return;
 
@@ -42,8 +50,8 @@ public sealed partial class CreateRequestAnalyzer : DiagnosticAnalyzer
                 if (invocation.ArgumentList.Arguments.Count == 3)
                 {
                     // Provided arguments
-                    string callerFilePathArg = CleanString(invocation.ArgumentList.Arguments[0].Expression.ToString());
-                    string callerMemberNameArg = CleanString(invocation.ArgumentList.Arguments[1].Expression.ToString());
+                    string callerFilePathArg = GetCleanedString(invocation.ArgumentList.Arguments[0].Expression);
+                    string callerMemberNameArg = GetCleanedString(invocation.ArgumentList.Arguments[1].Expression);
                     int callerLineNumberArg = int.Parse(invocation.ArgumentList.Arguments[2].Expression.ToString());
 
                     // Found Values
