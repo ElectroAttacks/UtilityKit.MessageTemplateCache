@@ -13,7 +13,7 @@ public sealed partial class CreateRequestAnalyzer : DiagnosticAnalyzer
     {
         get
         {
-            return ImmutableArray.Create(Descriptors.CreateRequestMustBeCalledWithoutParameters);
+            return ImmutableArray.Create(Descriptors.NoParameters, Descriptors.InvalidParameters);
         }
     }
 
@@ -28,17 +28,40 @@ public sealed partial class CreateRequestAnalyzer : DiagnosticAnalyzer
 
     private void AnalyzeMethodInvocation(SyntaxNodeAnalysisContext context)
     {
-        var invocation = context.Node as InvocationExpressionSyntax;
-        if (invocation != null)
+        // Clean the string from the quotes and double backslashes.
+        static string CleanString(string input) => input.Replace("\\\\", "\\").Trim('"');
+
+        // Main logic.
+        if (context.Node is InvocationExpressionSyntax invocation)
         {
-            var method = invocation.Expression as MemberAccessExpressionSyntax;
-            if (method != null && method.Name.Identifier.ValueText == "CreateRequest" && method.Expression.ToString() == "MessageTemplateCache")
+            if (invocation.Expression is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "CreateRequest" } method && method.Expression.ToString() == "MessageTemplateCache")
             {
-                if (invocation.ArgumentList.Arguments.Any())
+                if (invocation.ArgumentList.Arguments.Count == 0) return;
+
+                // Check if all parameters are provided and valid.
+                if (invocation.ArgumentList.Arguments.Count == 3)
                 {
-                    var diagnostic = Diagnostic.Create(Descriptors.CreateRequestMustBeCalledWithoutParameters, invocation.GetLocation());
-                    context.ReportDiagnostic(diagnostic);
+                    // Provided arguments
+                    string callerFilePathArg = CleanString(invocation.ArgumentList.Arguments[0].Expression.ToString());
+                    string callerMemberNameArg = CleanString(invocation.ArgumentList.Arguments[1].Expression.ToString());
+                    int callerLineNumberArg = int.Parse(invocation.ArgumentList.Arguments[2].Expression.ToString());
+
+                    // Found Values
+                    string callerFilePathInCode = context.Node.SyntaxTree.FilePath;
+                    string callerMemberNameInCode = context.Node.FirstAncestorOrSelf<MethodDeclarationSyntax>()?.Identifier.ValueText ?? "";
+                    int lineNumberInMethod = context.Node.GetLocation().GetLineSpan().StartLinePosition.Line + 1;
+
+                    // Report diagnostics if the provided values are invalid.
+                    if (callerFilePathArg != callerFilePathInCode || callerMemberNameArg != callerMemberNameInCode || callerLineNumberArg < lineNumberInMethod)
+                    {
+                        context.ReportDiagnostic(Diagnostic.Create(Descriptors.InvalidParameters, invocation.GetLocation(), callerMemberNameInCode));
+                    }
+
+                    return;
                 }
+
+                // Should have no parameters.
+                context.ReportDiagnostic(Diagnostic.Create(Descriptors.NoParameters, invocation.GetLocation()));
             }
         }
     }
