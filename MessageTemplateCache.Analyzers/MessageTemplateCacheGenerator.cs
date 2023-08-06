@@ -13,7 +13,7 @@ namespace MessageTemplateCache.Generators;
 /// A source generator to generate a message template cache class.
 /// </summary>
 [Generator(LanguageNames.CSharp)]
-public sealed partial class CacheGenerator : ISourceGenerator
+public sealed partial class MessageTemplateCacheGenerator : ISourceGenerator
 {
 
     /// <summary>

@@ -1,12 +1,11 @@
-﻿using System.Reflection;
-using Microsoft.CodeAnalysis;
+﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace MessageTemplateCache.Generators;
 
-public partial class CacheGenerator
+public partial class MessageTemplateCacheGenerator
 {
 
     /// <summary>
@@ -15,7 +14,15 @@ public partial class CacheGenerator
     private static class Configuration
     {
 
-        private static readonly Assembly _assembly = typeof(CacheGenerator).Assembly;
+        /// <summary>
+        /// Gets the version of the generator.
+        /// </summary>
+        public static readonly string _version = typeof(MessageTemplateCacheGenerator).Assembly.GetName().Version.ToString();
+
+        /// <summary>
+        /// Gets the identifier for the message template attribute.
+        /// </summary>
+        public const string _messageTemplateIdentifier = "MessageTemplate";
 
 
         #region Cache Class
@@ -74,9 +81,9 @@ public partial class CacheGenerator
                         .WithArgumentList(AttributeArgumentList(SeparatedList<AttributeArgumentSyntax>(
                             new SyntaxNodeOrToken[]
                             {
-                                AttributeArgument(LiteralExpression(SyntaxKind.StringLiteralExpression, Literal(_assembly.GetName().Name))),
+                                AttributeArgument(LiteralExpression(SyntaxKind.StringLiteralExpression, Literal(nameof(MessageTemplateCacheGenerator)))),
                                 Token(SyntaxKind.CommaToken),
-                                AttributeArgument(LiteralExpression(SyntaxKind.StringLiteralExpression, Literal(_assembly.GetName().Version.ToString())))
+                                AttributeArgument(LiteralExpression(SyntaxKind.StringLiteralExpression, Literal(_version)))
                             }
                         )))
                 )
@@ -119,5 +126,6 @@ public partial class CacheGenerator
         })));
 
         #endregion
+
     }
 }
