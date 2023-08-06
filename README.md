@@ -1,1 +1,1 @@
-# UtilityKit.MessageTemplateCache
+# MessageTemplateCache
