@@ -98,7 +98,7 @@ public static partial class MessageTemplateCache
     ///     The <see cref="CacheItem"/> matching the <see cref="CacheRequest"/> or <see langword="null"/> if not found.
     /// </returns>
     [DebuggerHidden, DebuggerStepThrough, MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static CacheItem? GetCacheItem(CacheRequest cacheRequest)
+    private static CacheItem? GetCacheItem(CacheRequest cacheRequest)
     {
         if (_cache!.TryGetValue(cacheRequest, out List<CacheItem>? cacheItems))
         {

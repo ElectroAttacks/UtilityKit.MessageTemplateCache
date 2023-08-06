@@ -1,10 +1,9 @@
-﻿using System;
-using Microsoft.CodeAnalysis;
+﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace MessageTemplateCache.Generators;
 
-public partial class CacheGenerator
+public partial class MessageTemplateCacheGenerator
 {
 
     /// <summary>
@@ -15,11 +14,23 @@ public partial class CacheGenerator
 
         public void OnVisitSyntaxNode(SyntaxNode syntaxNode)
         {
-            if (syntaxNode is AttributeSyntax { Name: IdentifierNameSyntax { Identifier.Text: "MessageTemplate" } } attribute)
+            // Ignore nodes that are not attributes.
+            if (syntaxNode is AttributeSyntax
+                {
+                    Name: IdentifierNameSyntax { Identifier.Text: Configuration._messageTemplateIdentifier },
+                    ArgumentList.Arguments.Count: > 0
+                } attribute)
             {
-                MethodDeclarationSyntax method = GetMethodDeclaration(syntaxNode);
+
+                // Get the method it decorates.
+                if (GetMethodDeclaration(syntaxNode) is not MethodDeclarationSyntax method)
+                    return;
+
+
+                // Get the line position of the attribute.
                 FileLinePositionSpan linePosition = attribute.GetLocation().GetLineSpan();
 
+                // Add the attribute to the cache.
                 AttributeInfo key = new(
                     FilePath: linePosition.Path,
                     MethodName: method.Identifier.Text);
@@ -43,7 +54,7 @@ public partial class CacheGenerator
         /// </summary>
         /// <param name="syntaxNode">The syntax node.</param>
         /// <returns>The <see cref="MethodDeclarationSyntax"/> containing the provided syntax node.</returns>
-        private MethodDeclarationSyntax GetMethodDeclaration(SyntaxNode syntaxNode)
+        private MethodDeclarationSyntax? GetMethodDeclaration(SyntaxNode syntaxNode)
         {
             SyntaxNode? parent = syntaxNode.Parent;
 
@@ -57,7 +68,7 @@ public partial class CacheGenerator
                 parent = parent.Parent;
             }
 
-            throw new InvalidOperationException($"The node '{syntaxNode.GetType().Name}' is not declared within a MethodDeclarationSyntax.");
+            return null;
         }
     }
 }
