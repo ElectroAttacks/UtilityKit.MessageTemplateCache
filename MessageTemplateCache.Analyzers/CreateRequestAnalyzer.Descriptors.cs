@@ -4,7 +4,7 @@ namespace MessageTemplateCache.Analyzers;
 public partial class CreateRequestAnalyzer
 {
 
-    private static class Descriptors
+    internal static class Descriptors
     {
         public static readonly DiagnosticDescriptor NoParameters = new(
             id: "MTC0001",
